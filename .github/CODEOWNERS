@@ -1,0 +1,14 @@
+# This file specifies the code owners for different parts of the repository.
+# A pull request will need review from a code owner before it can be merged.
+
+# Core team owners
+* @your-organization/core-team
+
+# Backend team owners
+/backend/       @backend-team
+
+# Frontend team owners
+/frontend/      @frontend-team
+
+# Documentation owners
+/docs/          @docs-team
