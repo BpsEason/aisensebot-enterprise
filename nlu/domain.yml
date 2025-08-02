@@ -1,0 +1,53 @@
+# Rasa Domain file
+# This file defines the universe of your assistant:
+# what intents, entities, slots, and responses it knows about.
+
+# Intents are things the user wants to do.
+intents:
+  - greet
+  - goodbye
+  - ask_about_product
+  - provide_info
+
+# Entities are key pieces of information from user messages.
+entities:
+  - product
+  - info_type
+
+# Slots are memory. They store information extracted from entities.
+slots:
+  product:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: product
+  info_type:
+    type: text
+    influence_conversation: true
+    mappings:
+    - type: from_entity
+      entity: info_type
+
+# Responses are what the bot can say.
+responses:
+  utter_greet:
+  - text: "您好！我是智慧助理，有什麼可以為您服務的嗎？"
+  utter_goodbye:
+  - text: "再見！很高興能為您服務。"
+  utter_ask_product:
+  - text: "好的，我正在為您查詢{product}的相關資訊，請稍候。"
+  utter_default:
+  - text: "很抱歉，我不太明白您的意思。請問您需要什麼協助嗎？"
+
+# Actions are what the bot can do.
+actions:
+- utter_greet
+- utter_goodbye
+- utter_ask_product
+- utter_default
+
+# Session configuration
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
