@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aisensebot-enterprise.fullname" . }}-backend
+  labels:
+    {{- include "aisensebot-enterprise.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: backend
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "aisensebot-enterprise.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: backend
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.image.repository }}/aisensebot-backend:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.backend.port }}
+              protocol: TCP
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aisensebot-enterprise.fullname" . }}-secrets
+                  key: openAIKey
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "aisensebot-enterprise.fullname" . }}-secrets
+                  key: jwtSecret
+            - name: RASA_URL
+              value: "http://{{ include "aisensebot-enterprise.fullname" . }}-nlu:{{ .Values.services.nlu.port }}"
+            - name: RESPONSE_ENGINE_URL
+              value: "http://{{ include "aisensebot-enterprise.fullname" . }}-response-engine:{{ .Values.services.responseEngine.port }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http

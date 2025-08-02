@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aisensebot-enterprise.fullname" . }}-frontend
+  labels:
+    {{- include "aisensebot-enterprise.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.services.frontend.type }}
+  ports:
+    - port: {{ .Values.services.frontend.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/instance: {{ .Release.Name }}

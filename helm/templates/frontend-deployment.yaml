@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aisensebot-enterprise.fullname" . }}-frontend
+  labels:
+    {{- include "aisensebot-enterprise.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "aisensebot-enterprise.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.repository }}/aisensebot-frontend:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.services.frontend.port }}
+              protocol: TCP
+          env:
+            - name: VITE_BACKEND_URL
+              value: "http://{{ include "aisensebot-enterprise.fullname" . }}-backend:{{ .Values.services.backend.port }}"
+            - name: VITE_WEBSOCKET_URL
+              value: "ws://{{ include "aisensebot-enterprise.fullname" . }}-backend:{{ .Values.services.backend.port }}/chat"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

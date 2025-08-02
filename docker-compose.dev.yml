@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    volumes:
+      - ./backend:/app
+      - ./wait-for-it.sh:/usr/local/bin/wait-for-it.sh
+    env_file:
+      - .env
+    environment:
+      - RASA_URL=http://nlu:5005
+      - RESPONSE_ENGINE_URL=http://response-engine:8001
+    depends_on:
+      nlu:
+        condition: service_started
+      response-engine:
+        condition: service_started
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    networks:
+      - aisensebot-network
+      
+  nlu:
+    image: rasa/rasa:3.0.0-full
+    volumes:
+      - ./nlu:/app
+    command: "run -m /app/models --enable-api --cors '*'"
+    ports:
+      - "5005:5005"
+    networks:
+      - aisensebot-network
+
+  response-engine:
+    build: ./response-engine
+    volumes:
+      - ./response-engine:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8001:8001"
+    networks:
+      - aisensebot-network
+
+  mongodb:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - aisensebot-network
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - aisensebot-network
+      
+networks:
+  aisensebot-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

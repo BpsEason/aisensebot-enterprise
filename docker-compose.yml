@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  rasa_train:
+    image: rasa/rasa:3.0.0-full
+    volumes:
+      - ./nlu:/app
+    command: "train -d /app/data -c /app/config.yml --out /app/models"
+    networks:
+      - aisensebot-network
+    # This service will exit after training is complete
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - RASA_URL=http://nlu:5005
+      - RESPONSE_ENGINE_URL=http://response-engine:8001
+      - MONGO_URL=mongodb://mongodb:27017/aisensebot
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    # `depends_on` with `condition: service_started` is primarily for local development.
+    # In production orchestration systems like Kubernetes or Docker Swarm,
+    # you should rely on liveness and readiness probes with retry mechanisms.
+    depends_on:
+      rasa_train:
+        condition: service_completed_successfully
+      nlu:
+        condition: service_started
+      response-engine:
+        condition: service_started
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aisensebot-network
+    restart: on-failure
+
+  nlu:
+    image: rasa/rasa:3.0.0-full
+    volumes:
+      - ./nlu:/app
+    command: "run -m /app/models --enable-api --cors '*'"
+    ports:
+      - "5005:5005"
+    depends_on:
+      rasa_train:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5005"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aisensebot-network
+    restart: on-failure
+
+  response-engine:
+    build: ./response-engine
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./response-engine:/app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - aisensebot-network
+    restart: on-failure
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    environment:
+      - VITE_BACKEND_URL=http://backend:8000
+      - VITE_WEBSOCKET_URL=ws://backend:8000/chat
+    networks:
+      - aisensebot-network
+
+  mongodb:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - aisensebot-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: on-failure
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aisensebot-network
+    restart: on-failure
+    
+  jaeger:
+    image: jaegertracing/all-in-one:1.37
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+    networks:
+      - aisensebot-network
+
+networks:
+  aisensebot-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+

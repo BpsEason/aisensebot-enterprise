@@ -1,0 +1,6 @@
+apiVersion: v2
+name: aisensebot-enterprise
+description: A Helm chart for deploying the aisensebot-enterprise application.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
