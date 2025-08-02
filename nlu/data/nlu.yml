@@ -1,0 +1,40 @@
+# Rasa NLU Training Data
+# This file contains examples of user inputs to train the NLU model.
+
+version: "3.0"
+
+nlu:
+  - intent: greet
+    examples: |
+      - 嗨
+      - 你好
+      - 哈囉
+      - 嗨，你好嗎
+      - 機器人你好
+      - 早上好
+      - 下午好
+
+  - intent: goodbye
+    examples: |
+      - 再見
+      - 掰掰
+      - 晚安
+      - 很高興能聊聊
+      - 謝謝你，再見
+
+  - intent: ask_about_product
+    examples: |
+      - 我想查詢 [筆記型電腦](product)
+      - [手機](product) 有沒有貨？
+      - 請問 [平板電腦](product) 的價格
+      - 幫我查一下 [智慧手錶](product)
+      - 你有 [電視](product) 的相關資訊嗎？
+      - 關於 [吸塵器](product) 的細節
+
+  - intent: provide_info
+    examples: |
+      - 這是我的資訊
+      - 我的名字是 [小明](name)
+      - 我的電話是 [123456789](phone)
+
+# You can add more training data as your project grows.
