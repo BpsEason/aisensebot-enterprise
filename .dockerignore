@@ -1,0 +1,16 @@
+.git
+.gitignore
+.github
+*.md
+docs/
+node_modules/
+tests/
+e2e/
+__pycache__/
+*.pyc
+.env
+.venv
+venv
+Makefile
+.pre-commit-config.yaml
+.devcontainer
