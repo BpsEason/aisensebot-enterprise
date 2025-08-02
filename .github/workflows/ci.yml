@@ -1,0 +1,141 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install Python dependencies
+        run: |
+          pip install flake8 mypy
+      - name: Lint with Flake8
+        run: |
+          flake8 backend response-engine
+      - name: Type check with MyPy
+        run: |
+          mypy backend response-engine
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install frontend dependencies
+        run: |
+          npm install
+        working-directory: ./frontend
+      - name: Lint with ESLint and Prettier
+        run: |
+          npm run lint
+        working-directory: ./frontend
+
+  test:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v3
+      # Install Docker Compose and other dependencies
+      - name: Install Docker and Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io docker-compose
+      - name: Start Docker services
+        run: docker-compose -f docker-compose.dev.yml up -d --build
+      - name: Wait for services to be healthy
+        run: |
+          ./wait-for-it.sh backend:8000 --timeout=60
+          ./wait-for-it.sh response-engine:8001 --timeout=60
+          
+      # Backend tests
+      - name: Run backend tests with coverage
+        run: |
+          docker-compose -f docker-compose.dev.yml exec -T backend pytest --cov=app --cov-report=xml
+      - name: Run response-engine tests with coverage
+        run: |
+          docker-compose -f docker-compose.dev.yml exec -T response-engine pytest --cov=./ --cov-report=xml
+      # Frontend tests
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: ./frontend
+      - name: Run frontend tests with coverage
+        run: npm run test -- --coverage
+        working-directory: ./frontend
+      # Rasa model validation
+      - name: Validate Rasa NLU data
+        run: docker-compose -f docker-compose.dev.yml exec -T nlu rasa data validate -d /app/data -c /app/config.yml
+      # Code Coverage
+      - name: Upload code coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./backend/coverage.xml,./response-engine/coverage.xml,./frontend/coverage/cobertura-coverage.xml
+          fail_ci_if_error: true
+          verbose: true
+
+  # New job for security scanning
+  security_scan:
+    runs-on: ubuntu-latest
+    needs: build_and_push
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb stable main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+      - name: Scan backend image
+        run: |
+          docker pull your-docker-username/aisensebot-backend:latest
+          trivy image your-docker-username/aisensebot-backend:latest
+      - name: Scan response-engine image
+        run: |
+          docker pull your-docker-username/aisensebot-response-engine:latest
+          trivy image your-docker-username/aisensebot-response-engine:latest
+      - name: Scan frontend image
+        run: |
+          docker pull your-docker-username/aisensebot-frontend:latest
+          trivy image your-docker-username/aisensebot-frontend:latest
+
+  build_and_push:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: your-docker-username/aisensebot-backend:latest
+      - name: Build and push response-engine image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./response-engine
+          push: true
+          tags: your-docker-username/aisensebot-response-engine:latest
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: your-docker-username/aisensebot-frontend:latest
