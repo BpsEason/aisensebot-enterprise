@@ -3,8 +3,6 @@
 ![CI Status](https://img.shields.io/github/actions/workflow/status/your-username/aisensebot-enterprise/ci.yml?branch=main)
 ![Docker Build](https://img.shields.io/badge/Docker-passing-blue)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Backend Coverage](https://img.shields.io/badge/coverage-backend-passing-green)
-![Frontend Coverage](https://img.shields.io/badge/coverage-frontend-passing-green)
 
 ## 專案簡介
 `aisensebot-enterprise` 是一個企業級 AI 語意機器人平台，專為高效能、可擴展的對話系統設計。該平台整合了 **FastAPI**、**Rasa** 與 **OpenAI GPT-3.5**，提供即時聊天功能、多語言自然語言理解（NLU）以及智慧回應生成。平台支援從本地開發到 Kubernetes 生產環境的完整部署流程，內建可觀測性（Prometheus、Grafana、Jaeger）與安全性（JWT 認證、Trivy 安全掃描），確保企業級應用的穩定性與可靠性。
@@ -94,7 +92,7 @@
 ## 快速上手
 1. **複製專案**：
    ```bash
-   git clone https://github.com/your-username/aisensebot-enterprise.git
+   git clone https://github.com/BpsEason/aisensebot-enterprise.git
    cd aisensebot-enterprise
    ```
 2. **設定環境變數**：
