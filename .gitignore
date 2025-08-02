@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+poetry.lock
+.mypy_cache/
+
+# Docker
+.dockerignore
+!docker-compose.yml
+!docker-compose.dev.yml
+
+# Node.js
+node_modules/
+dist/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Rasa
+nlu/models/*
+!nlu/models/.gitignore
+
+# Frontend
+.vite/
+# E2E
+cypress/videos/
+cypress/screenshots/
+
+# VSCode
+.vscode/
