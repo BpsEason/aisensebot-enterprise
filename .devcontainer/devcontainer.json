@@ -1,0 +1,22 @@
+{
+  "name": "AI Sensebot Dev Container",
+  "dockerComposeFile": [
+    "../docker-compose.dev.yml"
+  ],
+  "service": "backend",
+  "workspaceFolder": "/app",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "Vue.volar",
+        "GitHub.vscode-github-actions",
+        "charliermarsh.ruff",
+        "ryanluker.vscode-coverage-gutters"
+      ]
+    }
+  }
+}
